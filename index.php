@@ -1,14 +1,13 @@
-<?php
-session_start();
-//include 'controller.php';
-?>
-<!DOCTYPE html>
 <html>
 <head>
  <meta charset="utf-8" />
  <meta http-equiv="X-UA-Compatible" content="IE=edge">
  <title>BasicMVC</title>
 </head>
+<?php
+session_start();
+//include 'controller.php';
+?>
 <body>
 <h1 style="margin:2px;">Basic MVC</h1>
 <h4 style="padding:0;margin:0;">

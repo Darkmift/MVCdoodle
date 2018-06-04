@@ -1,153 +1,142 @@
 <?php
 session_start();
 include 'Model.php';
-
+include 'Employee.php';
+$employee = new Employee();
+$employee->resetMsg();
 switch (true) {
     case isset($_POST['Get_Employee']):
-        if (isset($_POST['id']) && is_numeric($_POST['id'])) {
-            $statement = $db->prepare("select * from employees where id = :id");
-            $statement->execute(array(':id' => $_POST['id']));
-            $row = $statement->fetch(PDO::FETCH_ASSOC);
-            $result = $row;
+
+        $employee = new Employee();
+
+        if ($employee->validateId($_POST['id'])) {
+            $db = new db();
+            $db->query("SELECT * FROM employees WHERE id=:id");
+            $db->bind(':id', $_POST['id']);
+            $db->execute();
+            $result = $db->single();
             if (empty($result)) {
-                $_SESSION['Result_from_Model'] = "Id is not in DB";
+                $employee->addToMsg("Id is not in DB");
+                $employee->msg();
+                output();
+                break;
             } else {
-                $_SESSION['Result_from_Model'] = $result;
+                $employee->addToMsg(json_encode($result, JSON_PRETTY_PRINT));
             }
-            header("Location: index.php");
-        } else {
-            $_SESSION['Result_from_Model'] = "Please input Id and try again";
-            header("Location: index.php");
         }
+        $employee->clearForm();
+        $employee->msg();
+        output();
         break;
 
     case isset($_POST['Add_New']):
-        $msg = "";
-        if (!is_numeric($_POST['id'])) {
-            $msg .= "please input id<br>";
-        } else {
-            $id = $_SESSION['id'] = $_POST['id'];
-        }
-        if ($_POST['name'] == "") {
-            $msg .= "please input name<br>";
-        } else {
-            $name = $_SESSION['name'] = $_POST['name'];
-        }
-
-        if ($msg != "") {
-            output($msg);
+        $employee->validateId($_POST['id']);
+        $employee->validateName($_POST['name']);
+        if (strlen($employee->msg()) > 1) {
+            $employee->msg();
+            output();
             break;
         }
-        $statement = $db->prepare("INSERT INTO employees(id, name)
-        VALUES(:id,:fname)");
-        $statement->execute(array(
-            "id" => $id,
-            "fname" => $name,
-        ));
-        $result = $statement->rowCount();
-        if (empty($result)) {
-            $_SESSION['Result_from_Model'] = "Add new failed,Id already exists";
-        } else {
-            $_SESSION['Result_from_Model'] = "$name was added to DB!";
-            unset($_SESSION['id']);
-            unset($_SESSION['name']);
+        // //
+        try {
+            $db = new db();
+            $db->query("INSERT INTO employees(id, name)
+            VALUES(:id,:fname)");
+            $db->bind(':id', $employee->getId());
+            $db->bind(':fname', $employee->getName());
+            $db->execute();
+        } catch (Exception $e) {
+            if ($e->errorInfo[1] == 1062) {
+                $employee->addToMsg("Add new failed,Id already exists");
+            } else {
+                $employee->addToMsg("fatal error processing request:" . json_encode($e));
+            }
+            $employee->msg();
+            output();
+            break;
         }
-
-        header("Location: index.php");
+        //
+        $employee->addToMsg($employee->getName() . " was added to DB,new id: " . $employee->getId());
+        $employee->clearForm();
+        $employee->msg();
+        output();
         break;
 
     case isset($_POST['Update_Employee']):
-        $msg = "";
-        if (!is_numeric($_POST['id'])) {
-            $msg .= "please input id<br>";
-        } else {
-            $id = $_SESSION['id'] = $_POST['id'];
-        }
-        if ($_POST['name'] == "") {
-            $msg .= "please input name<br>";
-        } else {
-            $name = $_SESSION['name'] = $_POST['name'];
-        }
 
-        if ($msg != "") {
-            output($msg);
+        $employee->validateId($_POST['id']);
+        $employee->validateName($_POST['name']);
+        if (strlen($employee->msg()) > 1) {
+            $employee->msg();
+            output();
             break;
         }
-        $statement = $db->prepare("UPDATE employees SET name = :fname WHERE id = :id;");
-        $statement->execute(array(
-            "id" => $id,
-            "fname" => $name,
-        ));
-        $result = $statement->rowCount();
+        //
+        $db = new db();
+        $db->query("UPDATE employees SET name = :fname WHERE id = :id;");
+        $db->bind(':id', $employee->getId());
+        $db->bind(':fname', $employee->getName());
+        $db->execute();
+        $result = $db->rowCount();
+        //
         if (empty($result)) {
-            $_SESSION['Result_from_Model'] = "Update failed,possible reasons:
+            $employee->addToMsg("Update failed,possible reasons:
             <ol>
             <li>Id already in DB</li>
             <li>id is not in DB</li>
             <li>new name is same as old</li>
-            </ol>";
+            </ol>");
         } else {
-            $_SESSION['Result_from_Model'] = "update of $id succesful!";
-            unset($_SESSION['id']);
-            unset($_SESSION['name']);
+            $employee->addToMsg("update of id:" . $employee->getId() . " succesful!");
+            $employee->clearForm();
         }
-
-        header("Location: index.php");
+        $employee->msg();
+        output();
         break;
 
     case isset($_POST['Delete_Employee']):
-        $msg = "";
-        if (!is_numeric($_POST['id'])) {
-            $msg .= "please input id<br>";
-        } else {
-            $id = $_SESSION['id'] = $_POST['id'];
-        }
 
-        if ($msg != "") {
-            output($msg);
+        $employee->validateId($_POST['id']);
+        if (strlen($employee->msg()) > 1) {
+            $employee->msg();
+            output();
             break;
         }
-        $statement = $db->prepare("DELETE FROM employees WHERE id= :id");
-        $statement->execute(array(
-            "id" => $id,
-        ));
-        $result = $statement->rowCount();
+        //
+        $db = new db();
+        $db->query("DELETE FROM employees WHERE id= :id");
+        $db->bind(':id', $employee->getId());
+        $db->execute();
+        $result = $db->rowCount();
+        //
         if ($result < 1) {
-            $_SESSION['Result_from_Model'] = "Delete failed,Id not found";
+            $employee->addToMsg("Delete failed,Id not found");
         } else {
-            $_SESSION['Result_from_Model'] = "$id deleted from DB";
-            unset($_SESSION['id']);
-            unset($_SESSION['name']);
+            $employee->addToMsg($employee->getId() . " deleted from DB");
+            $employee->clearForm();
         }
-        header("Location: index.php");
+        $employee->msg();
+        output();
         break;
 
     case isset($_POST['Get_All_Employees']):
-        $statement = $db->prepare("SELECT * FROM employees");
-        $statement->execute();
-        $result = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $db = new db();
+        $db->query("SELECT * FROM employees");
+        $db->execute();
+        $result = $db->resultset();
         if (empty($result)) {
-            $_SESSION['Result_from_Model'] = "There are no employees on record";
+            $employee->addToMsg("There are no employees on record");
         } else {
-            output(json_encode($result, JSON_PRETTY_PRINT));
-            unset($_SESSION['id']);
-            unset($_SESSION['name']);
+            $employee->addToMsg(json_encode($result, JSON_PRETTY_PRINT));
         }
-
+        $employee->msg();
+        $employee->clearForm();
+        output();
         break;
 }
 
 //helpers
-
-function display($param)
+function output()
 {
-    echo '<pre>';
-    print_r($param);
-    echo '</pre>';
-}
-
-function output($msg)
-{
-    $_SESSION['Result_from_Model'] = $msg;
     return header("Location: index.php");
 }

@@ -69,15 +69,51 @@ class Employee
     {
         $db = new db();
         $db->query("SELECT * FROM employees WHERE id=:id");
-        $db->bind(':id', $_POST['id']);
+        foreach ($bindArr as $key => $value) {
+            $db->bind($key, $value);
+        }
+        // $db->bind(':id', $_POST['id']);
         $db->execute();
         switch ($returnType) {
             case 'single':
                 $result = $db->single();
                 break;
 
-            default:
-                # code...
+            case 'none':
+                $result = '';
+                break;
+        }
+        return $result;
+    }
+
+    public function runDb2($sqlString, $bindArr, $returnType)
+    {
+        //die(var_dump($bindArr));
+        try {
+            $db = new db();
+            $db->query($sqlString);
+            foreach ($bindArr as $key => $value) {
+                $db->bind($key, $value);
+            }
+            $db->execute();
+        } catch (Exception $e) {
+            return $e;
+        }
+        switch ($returnType) {
+            case 'single':
+                $result = $db->single();
+                break;
+
+            case 'none':
+                $result = '';
+                break;
+
+            case 'rowCount':
+                $result = $db->rowCount();
+                break;
+
+            case 'resultset':
+                $result = $db->resultset();
                 break;
         }
         return $result;

@@ -10,15 +10,9 @@ switch (true) {
         $employee = new Employee();
 
         if ($employee->validateId($_POST['id'])) {
-
-            // $db = new db();
-            // $db->query("SELECT * FROM employees WHERE id=:id");
-            // $db->bind(':id', $_POST['id']);
-            // $db->execute();
-            // $result = $db->single();
-            $result = $employee->runDb(
+            $result = $employee->runDb2(
                 "SELECT * FROM employees WHERE id=:id",
-                array($employee->getId()),
+                array(":id" => $employee->getId()),
                 'single'
             );
             if (empty($result)) {
@@ -44,18 +38,17 @@ switch (true) {
             break;
         }
         // //
-        try {
-            $db = new db();
-            $db->query("INSERT INTO employees(id, name)
-            VALUES(:id,:fname)");
-            $db->bind(':id', $employee->getId());
-            $db->bind(':fname', $employee->getName());
-            $db->execute();
-        } catch (Exception $e) {
-            if ($e->errorInfo[1] == 1062) {
+        $result = $employee->runDb2(
+            "INSERT INTO employees(id, name) VALUES(:id,:fname)",
+            array(":id" => $employee->getId(), ":fname" => $employee->getName()),
+            'none'
+        );
+
+        if ($result != "") {
+            if ($result->errorInfo[1] == 1062) {
                 $employee->addToMsg("Add new failed,Id already exists");
             } else {
-                $employee->addToMsg("fatal error processing request:" . json_encode($e));
+                $employee->addToMsg("fatal error processing request:" . json_encode($result));
             }
             $employee->msg();
             output();
@@ -78,12 +71,11 @@ switch (true) {
             break;
         }
         //
-        $db = new db();
-        $db->query("UPDATE employees SET name = :fname WHERE id = :id;");
-        $db->bind(':id', $employee->getId());
-        $db->bind(':fname', $employee->getName());
-        $db->execute();
-        $result = $db->rowCount();
+        $result = $employee->runDb2(
+            "UPDATE employees SET name = :fname WHERE id = :id;",
+            array(":id" => $employee->getId(), ":fname" => $employee->getName()),
+            'rowCount'
+        );
         //
         if (empty($result)) {
             $employee->addToMsg("Update failed,possible reasons:
@@ -109,11 +101,11 @@ switch (true) {
             break;
         }
         //
-        $db = new db();
-        $db->query("DELETE FROM employees WHERE id= :id");
-        $db->bind(':id', $employee->getId());
-        $db->execute();
-        $result = $db->rowCount();
+        $result = $employee->runDb2(
+            "DELETE FROM employees WHERE id= :id",
+            array(":id" => $employee->getId()),
+            'rowCount'
+        );
         //
         if ($result < 1) {
             $employee->addToMsg("Delete failed,Id not found");
@@ -126,10 +118,11 @@ switch (true) {
         break;
 
     case isset($_POST['Get_All_Employees']):
-        $db = new db();
-        $db->query("SELECT * FROM employees");
-        $db->execute();
-        $result = $db->resultset();
+        $result = $employee->runDb2(
+            "SELECT * FROM employees",
+            array(),
+            'resultset'
+        );
         if (empty($result)) {
             $employee->addToMsg("There are no employees on record");
         } else {

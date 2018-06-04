@@ -10,11 +10,17 @@ switch (true) {
         $employee = new Employee();
 
         if ($employee->validateId($_POST['id'])) {
-            $db = new db();
-            $db->query("SELECT * FROM employees WHERE id=:id");
-            $db->bind(':id', $_POST['id']);
-            $db->execute();
-            $result = $db->single();
+
+            // $db = new db();
+            // $db->query("SELECT * FROM employees WHERE id=:id");
+            // $db->bind(':id', $_POST['id']);
+            // $db->execute();
+            // $result = $db->single();
+            $result = $employee->runDb(
+                "SELECT * FROM employees WHERE id=:id",
+                array($employee->getId()),
+                'single'
+            );
             if (empty($result)) {
                 $employee->addToMsg("Id is not in DB");
                 $employee->msg();

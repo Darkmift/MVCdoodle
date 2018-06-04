@@ -1,5 +1,5 @@
 <?php
-
+include_once 'Model.php';
 class Employee
 {
     private $id;
@@ -59,8 +59,27 @@ class Employee
         return $this->name;
     }
 
-    public function clearForm(){
+    public function clearForm()
+    {
         unset($_SESSION['id']);
         unset($_SESSION['name']);
+    }
+
+    public function runDb($sqlString, $bindArr, $returnType)
+    {
+        $db = new db();
+        $db->query("SELECT * FROM employees WHERE id=:id");
+        $db->bind(':id', $_POST['id']);
+        $db->execute();
+        switch ($returnType) {
+            case 'single':
+                $result = $db->single();
+                break;
+
+            default:
+                # code...
+                break;
+        }
+        return $result;
     }
 }

@@ -1,18 +1,5 @@
 <?php
 
-// class Moel
-// {
-//     private $host = 'localhost';
-//     private $user = 'root';
-//     private $pass = 'root12';
-//     private $dbname = 'employees';
-
-//     public static function conn()
-//     {
-//         return new PDO('mysql:host=localhost;dbname=employees;charset=utf8mb4', 'root', 'root12');
-//     }
-// }
-
 class db
 {
     private $host = 'localhost';
